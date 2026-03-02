@@ -78,7 +78,7 @@ If you want a Mac-like terminal experience in Windows Terminal, start here:
 
 - **Font face**:
   - `JetBrainsMono Nerd Font` (popular and polished; download: [latest zip](https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip) or [Nerd Fonts downloads](https://www.nerdfonts.com/font-downloads))
-  - `Cascadia Mono` (ships well with Windows Terminal)
+  - `Cascadia Mono` (ships with Windows Terminal)
   - `Menlo` or `SF Mono` (if you already have them installed)
 - **Font size**: `13` is a great default (`12-14` common)
 - **Recommended color scheme**: `One Half Dark`
