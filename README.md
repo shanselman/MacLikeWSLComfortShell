@@ -6,6 +6,33 @@ You are in a Linux terminal running inside Windows via **WSL**. This repo provid
 - `wsl-mac-comfort-bootstrap.sh`: setup script with WSL checks, apt baseline, optional Homebrew install, zsh managed blocks, and Mac-like helper shims (`pbcopy`, `pbpaste`, `open`)
 - `README.md`: onboarding guide and terminal personalization suggestions
 
+## Prereqs
+Before running setup:
+- WSL installed and working on Windows (`wsl --status`)
+- Ubuntu installed in WSL (for example `Ubuntu` or `Ubuntu-24.04`)
+- Windows Terminal installed (recommended)
+- A user in Ubuntu with sudo access
+
+## Quick start
+From inside your Ubuntu WSL shell:
+
+```bash
+mkdir -p ~/src
+cd ~/src
+git clone https://github.com/shanselman/MacLikeWSLComfortShell.git
+cd MacLikeWSLComfortShell
+chmod +x wsl-mac-comfort-bootstrap.sh
+./wsl-mac-comfort-bootstrap.sh
+```
+
+If you already downloaded the script elsewhere, copy it into WSL and run it there:
+
+```bash
+cp /mnt/c/path/to/wsl-mac-comfort-bootstrap.sh ~/
+chmod +x ~/wsl-mac-comfort-bootstrap.sh
+~/wsl-mac-comfort-bootstrap.sh
+```
+
 ## What you get after running bootstrap (default flags)
 - **zsh** as your shell (like modern macOS)
 - **Homebrew (Linuxbrew)** so `brew install ...` works the way you expect
@@ -74,7 +101,7 @@ code .
 That opens VS Code "connected" to Linux so terminals, tools, and paths all match.
 
 ## Terminal look and feel (Mac-friendly)
-If you want a Mac-like terminal experience in Windows Terminal, start here:
+You will use **Windows Terminal** on the Windows side. Open **Settings**, select your **Ubuntu profile**, and apply these profile settings for a Mac-friendly feel:
 
 - **Font face**:
   - `JetBrainsMono Nerd Font` (popular and polished; download: [latest zip](https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip) or [Nerd Fonts downloads](https://www.nerdfonts.com/font-downloads))
@@ -99,7 +126,15 @@ In Windows Terminal settings JSON, profile-level example:
 }
 ```
 
-## Other ideas Mac users usually like
+### Add your screenshots
+When you add PNG screenshots in this folder, link them here so new users can follow along:
+
+```md
+![Ubuntu profile settings](./your-ubuntu-profile-settings.png)
+![Ubuntu appearance settings](./your-ubuntu-appearance.png)
+```
+
+## Helpful Mac-style tweaks
 - Keep aliases in zsh for `ls`, `ll`, `lt`, `cat`, `grep`, and git shortcuts
 - Use `tmux` with `Ctrl+a` prefix for split panes and persistent sessions
 - Use `starship` for a clean, fast prompt
