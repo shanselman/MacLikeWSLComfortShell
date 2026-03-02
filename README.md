@@ -1,14 +1,22 @@
-# Welcome to WSL (Mac-style)
+# WSL Mac Comfort Shell
 
-You're in a Linux terminal running inside Windows via **WSL**. This environment is set up to feel familiar if you're coming from macOS.
+You are in a Linux terminal running inside Windows via **WSL**. This repo provides an idempotent bootstrap script and onboarding notes to make that environment feel familiar to macOS developers.
 
-## What you have by default
+## What this repo includes
+- `wsl-mac-comfort-bootstrap.sh`: setup script with WSL checks, apt baseline, optional Homebrew install, zsh managed blocks, and Mac-like helper shims (`pbcopy`, `pbpaste`, `open`)
+- `README.md`: onboarding guide and terminal personalization suggestions
+
+## What you get after running bootstrap (default flags)
 - **zsh** as your shell (like modern macOS)
 - **Homebrew (Linuxbrew)** so `brew install ...` works the way you expect
 - A modern CLI toolbox:
   - `git`, `gh`
   - `rg` (ripgrep), `fd`, `bat`, `eza`, `fzf`
   - `jq`, `yq`, `direnv`, `starship` prompt
+
+Notes:
+- `--minimal` skips optional extras (for example plugin/tool installs)
+- `--no-brew` skips Homebrew install and brew package installs
 
 ## Where your files should live
 Use the Linux filesystem for coding:
@@ -22,7 +30,7 @@ Use the Linux filesystem for coding:
 
 You *can* access Windows files at `/mnt/c/...`, but for dev builds and lots of small files it can be slower and sometimes weirder.
 
-## The three commands you'll use constantly
+## The three commands you will use constantly
 - Update packages:
   ```bash
   sudo apt update && sudo apt upgrade
@@ -63,6 +71,37 @@ code .
 
 That opens VS Code "connected" to Linux so terminals, tools, and paths all match.
 
+## Terminal look and feel (Mac-friendly)
+If you want a Mac-like terminal experience in Windows Terminal, start here:
+
+- **Font face**:
+  - `JetBrainsMono Nerd Font` (popular and polished)
+  - `Cascadia Mono` (ships well with Windows Terminal)
+  - `Menlo` or `SF Mono` (if you already have them installed)
+- **Font size**: `13` is a great default (`12-14` common)
+- **Color scheme**: `One Half Dark`, `Solarized Dark`, or `Campbell` (default)
+- **Cursor shape**: `bar`
+
+### Windows Terminal profile snippet
+In Windows Terminal settings JSON, profile-level example:
+
+```json
+{
+  "font": {
+    "face": "JetBrainsMono Nerd Font",
+    "size": 13
+  },
+  "colorScheme": "One Half Dark",
+  "cursorShape": "bar"
+}
+```
+
+## Other ideas Mac users usually like
+- Keep aliases in zsh for `ls`, `ll`, `lt`, `cat`, `grep`, and git shortcuts
+- Use `tmux` with `Ctrl+a` prefix for split panes and persistent sessions
+- Use `starship` for a clean, fast prompt
+- Keep projects in `~/src`, not `/mnt/c/...`, for better performance
+
 ## Installing common stuff
 Some useful installs:
 
@@ -80,7 +119,7 @@ sudo apt install <package>
 ```
 
 ## Quick mental model
-- This is **Linux**, not macOS, but it's configured to feel familiar.
+- This is **Linux**, not macOS, but it is configured to feel familiar.
 - Use `brew` for most developer tools.
 - Use `~/src` for code.
 - Use `code .` for a smooth editor experience.
