@@ -311,7 +311,7 @@ required_apt=(
   build-essential curl wget git ca-certificates gnupg lsb-release unzip zip jq
   pkg-config python3 python3-venv zsh fzf ripgrep fd-find bat man-db
 )
-optional_apt=(pipx eza btop htop tmux tldr socat xclip)
+optional_apt=(pipx eza btop htop tmux tldr socat xclip xdg-utils wslu)
 
 for pkg in "${required_apt[@]}"; do
   ensure_apt_package "$pkg" 0
@@ -379,6 +379,46 @@ cmd.exe /c start "" "$target" >/dev/null 2>&1
 EOF
 )"
 
+if ! has_cmd xdg-open; then
+  install_shim "$HOME/bin/xdg-open" "$(cat <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# wsl-mac-comfort shim
+exec open "$@"
+EOF
+)"
+fi
+
+if ! has_cmd x-www-browser; then
+  install_shim "$HOME/bin/x-www-browser" "$(cat <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# wsl-mac-comfort shim
+exec open "$@"
+EOF
+)"
+fi
+
+if ! has_cmd www-browser; then
+  install_shim "$HOME/bin/www-browser" "$(cat <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# wsl-mac-comfort shim
+exec open "$@"
+EOF
+)"
+fi
+
+if ! has_cmd wslview; then
+  install_shim "$HOME/bin/wslview" "$(cat <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# wsl-mac-comfort shim
+exec open "$@"
+EOF
+)"
+fi
+
 if [ "$NO_BREW" -eq 0 ]; then
   if ! has_cmd brew; then
     info "Installing Homebrew"
@@ -418,6 +458,15 @@ if [ -d /home/linuxbrew/.linuxbrew ]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 elif [ -d "$HOME/.linuxbrew" ]; then
   eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+fi
+if [ -z "${BROWSER:-}" ]; then
+  if command -v xdg-open >/dev/null 2>&1; then
+    export BROWSER=xdg-open
+  elif command -v wslview >/dev/null 2>&1; then
+    export BROWSER=wslview
+  elif command -v open >/dev/null 2>&1; then
+    export BROWSER=open
+  fi
 fi
 EOF
 )"

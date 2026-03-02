@@ -61,6 +61,8 @@ These commands behave like on macOS:
   open https://example.com
   ```
 
+The bootstrap also installs browser opener compatibility (`xdg-open`/`wslview` fallbacks) so tools like `gh auth login` can launch browser sign-in.
+
 ## VS Code (recommended workflow)
 Best experience is VS Code with Remote WSL.  
 From inside WSL, in a repo folder:
