@@ -126,13 +126,17 @@ In Windows Terminal settings JSON, profile-level example:
 }
 ```
 
-### Add your screenshots
-When you add PNG screenshots in this folder, link them here so new users can follow along:
+### Visual walkthrough (Ubuntu profile in Windows Terminal)
+Use these in order while updating your Ubuntu profile settings:
 
-```md
-![Ubuntu profile settings](./your-ubuntu-profile-settings.png)
-![Ubuntu appearance settings](./your-ubuntu-appearance.png)
-```
+1. Open Windows Terminal settings and select the Ubuntu profile  
+   ![Windows Terminal Ubuntu profile selection](./img/likemac1.png)
+
+2. Update font and appearance settings for a Mac-like look  
+   ![Ubuntu profile appearance settings](./img/likemac2.png)
+
+3. Confirm the profile colors and cursor settings  
+   ![Ubuntu profile color and cursor settings](./img/likemac3.png)
 
 ## Helpful Mac-style tweaks
 - Keep aliases in zsh for `ls`, `ll`, `lt`, `cat`, `grep`, and git shortcuts
