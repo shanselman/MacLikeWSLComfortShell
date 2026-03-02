@@ -75,11 +75,12 @@ That opens VS Code "connected" to Linux so terminals, tools, and paths all match
 If you want a Mac-like terminal experience in Windows Terminal, start here:
 
 - **Font face**:
-  - `JetBrainsMono Nerd Font` (popular and polished)
+  - `JetBrainsMono Nerd Font` (popular and polished; download: [latest zip](https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip) or [Nerd Fonts downloads](https://www.nerdfonts.com/font-downloads))
   - `Cascadia Mono` (ships well with Windows Terminal)
   - `Menlo` or `SF Mono` (if you already have them installed)
 - **Font size**: `13` is a great default (`12-14` common)
-- **Color scheme**: `One Half Dark`, `Solarized Dark`, or `Campbell` (default)
+- **Recommended color scheme**: `One Half Dark`
+- **Other good color schemes**: `Solarized Dark` or `Campbell` (default)
 - **Cursor shape**: `bar`
 
 ### Windows Terminal profile snippet
