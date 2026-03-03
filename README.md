@@ -5,6 +5,7 @@ You are in a Linux terminal running inside Windows via **WSL**. This repo provid
 ## What this repo includes
 - `wsl-mac-comfort-bootstrap.sh`: setup script with WSL checks, apt baseline, optional Homebrew install, zsh managed blocks, and Mac-like helper shims (`pbcopy`, `pbpaste`, `open`)
 - `run-in-wsl.ps1`: Windows-side helper that runs the bootstrap script in a target distro from your current repo folder
+- `install-terminal-fragment.ps1`: installs a Windows Terminal JSON fragment extension that adds a Mac Comfort profile + color scheme
 - `README.md`: onboarding guide and terminal personalization suggestions
 
 ## Prereqs
@@ -54,6 +55,18 @@ Pass bootstrap flags through the wrapper with `-BootstrapArgs`:
 ```powershell
 .\run-in-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--dry-run"
 .\run-in-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--no-brew,--minimal"
+```
+
+Then optionally install the Mac Comfort Windows Terminal profile fragment:
+
+```powershell
+.\install-terminal-fragment.ps1 -Distro MacComfort
+```
+
+For a different distro name:
+
+```powershell
+.\install-terminal-fragment.ps1 -Distro <YourDistroName>
 ```
 
 ## Two common scenarios
@@ -156,6 +169,16 @@ You will use **Windows Terminal** on the Windows side. Open **Settings**, select
 - **Recommended color scheme**: `One Half Dark`
 - **Other good color schemes**: `Solarized Dark` or `Campbell` (default)
 - **Cursor shape**: `bar`
+
+To apply these defaults automatically via JSON fragment extension, run:
+
+```powershell
+.\install-terminal-fragment.ps1 -Distro <YourDistroName>
+```
+
+This writes a fragment file to:
+- Current user: `%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\MacLikeWSLComfortShell\mac-comfort.fragment.json`
+- All users (admin): `C:\ProgramData\Microsoft\Windows Terminal\Fragments\MacLikeWSLComfortShell\mac-comfort.fragment.json` via `-AllUsers`
 
 ### Windows Terminal profile snippet
 In Windows Terminal settings JSON, profile-level example:
