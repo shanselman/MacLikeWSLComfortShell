@@ -33,6 +33,25 @@ chmod +x ~/wsl-mac-comfort-bootstrap.sh
 ~/wsl-mac-comfort-bootstrap.sh
 ```
 
+## Two common scenarios
+### 1) New machine (new WSL + Ubuntu)
+- Install WSL and Ubuntu.
+- Clone this repo inside WSL and run `./wsl-mac-comfort-bootstrap.sh`.
+
+### 2) Existing WSL distro (existing profiles)
+- Run the script in your existing distro; it is designed to be rerun safely.
+- It only updates managed blocks in `~/.zprofile` and `~/.zshrc` and avoids overwriting non-managed shim files unless `--force` is used.
+- Recommended first run on an existing profile:
+  ```bash
+  ./wsl-mac-comfort-bootstrap.sh --dry-run
+  ./wsl-mac-comfort-bootstrap.sh
+  ```
+- If you have multiple distros, target one explicitly:
+  ```powershell
+  wsl -l -q
+  wsl -d <DistroName>
+  ```
+
 ## What you get after running bootstrap (default flags)
 - **zsh** as your shell (like modern macOS)
 - **Homebrew (Linuxbrew)** so `brew install ...` works the way you expect
