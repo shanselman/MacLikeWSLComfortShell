@@ -4,6 +4,7 @@ You are in a Linux terminal running inside Windows via **WSL**. This repo provid
 
 ## What this repo includes
 - `wsl-mac-comfort-bootstrap.sh`: setup script with WSL checks, apt baseline, optional Homebrew install, zsh managed blocks, and Mac-like helper shims (`pbcopy`, `pbpaste`, `open`)
+- `run-in-wsl.ps1`: Windows-side helper that runs the bootstrap script in a target distro from your current repo folder
 - `README.md`: onboarding guide and terminal personalization suggestions
 
 ## Prereqs
@@ -33,10 +34,33 @@ chmod +x ~/wsl-mac-comfort-bootstrap.sh
 ~/wsl-mac-comfort-bootstrap.sh
 ```
 
+## Quick start from a Windows repo clone (run from CWD)
+If this repo is cloned on Windows and you are in this folder in PowerShell:
+
+```powershell
+wsl --install Ubuntu-24.04 --name MacComfort --no-launch
+wsl -d MacComfort   # complete first-launch user creation
+.\run-in-wsl.ps1 -Distro MacComfort
+```
+
+If you already have a distro:
+
+```powershell
+.\run-in-wsl.ps1 -Distro <YourDistroName>
+```
+
+Pass bootstrap flags through the wrapper with `-BootstrapArgs`:
+
+```powershell
+.\run-in-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--dry-run"
+.\run-in-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--no-brew,--minimal"
+```
+
 ## Two common scenarios
 ### 1) New machine (new WSL + Ubuntu)
 - Install WSL and Ubuntu.
-- Clone this repo inside WSL and run `./wsl-mac-comfort-bootstrap.sh`.
+- Clone this repo (Windows or WSL) and run bootstrap.
+- Easiest from Windows clone: `.\run-in-wsl.ps1 -Distro MacComfort`
 
 ### 2) Existing WSL distro (existing profiles)
 - Run the script in your existing distro; it is designed to be rerun safely.
@@ -50,6 +74,8 @@ chmod +x ~/wsl-mac-comfort-bootstrap.sh
   ```powershell
   wsl -l -q
   wsl -d <DistroName>
+  .\run-in-wsl.ps1 -Distro <DistroName> -BootstrapArgs "--dry-run"
+  .\run-in-wsl.ps1 -Distro <DistroName>
   ```
 
 ## What you get after running bootstrap (default flags)
