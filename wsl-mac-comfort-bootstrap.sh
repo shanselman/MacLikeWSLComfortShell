@@ -569,6 +569,8 @@ fi
 printf '\nSummary checks:\n'
 print_version_line zsh "zsh --version"
 print_version_line brew "brew --version"
+print_version_line make "make --version"
+print_version_line gcc "gcc --version"
 print_version_line rg "rg --version"
 print_version_line starship "starship --version"
 

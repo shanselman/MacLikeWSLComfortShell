@@ -94,6 +94,7 @@ For a different distro name:
 ## What you get after running bootstrap (default flags)
 - **zsh** as your shell (like modern macOS)
 - **Homebrew (Linuxbrew)** so `brew install ...` works the way you expect
+- **Build essentials**: `build-essential` is installed, giving you `make`, `gcc`, `g++`, and the C standard library headers needed to compile software from source
 - A modern CLI toolbox:
   - `git`, `gh`
   - `rg` (ripgrep), `fd`, `bat`, `eza`, `fzf`
