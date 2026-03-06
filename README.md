@@ -4,7 +4,7 @@ You are in a Linux terminal running inside Windows via **WSL**. This repo provid
 
 ## What this repo includes
 - `wsl-mac-comfort-bootstrap.sh`: setup script with WSL checks, apt baseline, optional Homebrew install, zsh managed blocks, and Mac-like helper shims (`pbcopy`, `pbpaste`, `open`)
-- `run-in-wsl.ps1`: Windows-side helper that runs the bootstrap script in a target distro from your current repo folder
+- `mac-my-wsl.ps1`: Windows-side helper that runs the bootstrap script in a target distro from your current repo folder (run without parameters for detailed help)
 - `install-terminal-fragment.ps1`: installs a Windows Terminal JSON fragment extension that adds a Mac Comfort profile + color scheme
 - `README.md`: onboarding guide and terminal personalization suggestions
 
@@ -41,20 +41,20 @@ If this repo is cloned on Windows and you are in this folder in PowerShell:
 ```powershell
 wsl --install Ubuntu-24.04 --name MacComfort --no-launch
 wsl -d MacComfort   # complete first-launch user creation
-.\run-in-wsl.ps1 -Distro MacComfort
+.\mac-my-wsl.ps1 -Distro MacComfort
 ```
 
 If you already have a distro:
 
 ```powershell
-.\run-in-wsl.ps1 -Distro <YourDistroName>
+.\mac-my-wsl.ps1 -Distro <YourDistroName>
 ```
 
 Pass bootstrap flags through the wrapper with `-BootstrapArgs`:
 
 ```powershell
-.\run-in-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--dry-run"
-.\run-in-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--no-brew,--minimal"
+.\mac-my-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--dry-run"
+.\mac-my-wsl.ps1 -Distro <YourDistroName> -BootstrapArgs "--no-brew,--minimal"
 ```
 
 Then optionally install the Mac Comfort Windows Terminal profile fragment:
@@ -73,7 +73,7 @@ For a different distro name:
 ### 1) New machine (new WSL + Ubuntu)
 - Install WSL and Ubuntu.
 - Clone this repo (Windows or WSL) and run bootstrap.
-- Easiest from Windows clone: `.\run-in-wsl.ps1 -Distro MacComfort`
+- Easiest from Windows clone: `.\mac-my-wsl.ps1 -Distro MacComfort`
 
 ### 2) Existing WSL distro (existing profiles)
 - Run the script in your existing distro; it is designed to be rerun safely.
@@ -87,8 +87,8 @@ For a different distro name:
   ```powershell
   wsl -l -q
   wsl -d <DistroName>
-  .\run-in-wsl.ps1 -Distro <DistroName> -BootstrapArgs "--dry-run"
-  .\run-in-wsl.ps1 -Distro <DistroName>
+  .\mac-my-wsl.ps1 -Distro <DistroName> -BootstrapArgs "--dry-run"
+  .\mac-my-wsl.ps1 -Distro <DistroName>
   ```
 
 ## What you get after running bootstrap (default flags)
