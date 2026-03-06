@@ -248,4 +248,15 @@ Try:
    brew --version
    ```
 
+### Typing feels slow / laggy
+The `zsh-syntax-highlighting` plugin re-parses the entire command line on every keystroke. Under WSL's slightly higher I/O overhead this can cause noticeable input lag. `zsh-autosuggestions` can add to it as well.
+
+To test, comment them out in `~/.zshrc`:
+```bash
+#[ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+#[ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+```
+
+Then `exec zsh -l` and see if it improves. Re-enable one at a time to find the culprit. Running `--minimal` skips both plugins during bootstrap.
+
 Welcome!
