@@ -230,7 +230,29 @@ These are already defaults in zsh, but for reference:
 - **Ctrl+W** → delete previous word ✅
 
 ### Why not Win+Backspace?
-On a Mac keyboard, Cmd maps to the Win key on Windows. Unfortunately Win+key combos are intercepted by the OS before your terminal sees them, so Win+Backspace cannot be rebound inside the shell. The workaround is [PowerToys Keyboard Manager](https://learn.microsoft.com/windows/powertoys/keyboard-manager) — swap Win ↔ Ctrl so your Cmd muscle memory lands on Ctrl, then the bindings above just work.
+On a Mac keyboard, Cmd maps to the Win key on Windows. Unfortunately Win+key combos are intercepted by the OS before your terminal sees them, so Win+Backspace cannot be rebound inside the shell. The fix is **PowerToys Keyboard Manager** — use it to swap Win ↔ Ctrl system-wide so your Cmd muscle memory lands on Ctrl, then the shell bindings above just work automatically.
+
+### PowerToys Keyboard Manager
+
+[**PowerToys**](https://learn.microsoft.com/windows/powertoys/) is a free Microsoft utility suite for power users. Install it from the Microsoft Store or from the [GitHub releases page](https://github.com/microsoft/PowerToys/releases).
+
+Once installed, open **PowerToys → [Keyboard Manager](https://learn.microsoft.com/windows/powertoys/keyboard-manager)** and remap keys or full shortcuts:
+
+| What to remap | From | To | Effect |
+|---|---|---|---|
+| Key | Win (Left) | Ctrl (Left) | Cmd → Ctrl globally |
+| Key | Ctrl (Left) | Win (Left) | Ctrl → Cmd (optional swap-back) |
+| Shortcut | Win+C | Ctrl+C | Copy |
+| Shortcut | Win+V | Ctrl+V | Paste |
+| Shortcut | Win+Z | Ctrl+Z | Undo |
+| Shortcut | Win+A | Ctrl+A | Select all |
+| Shortcut | Win+S | Ctrl+S | Save |
+| Shortcut | Win+T | Ctrl+T | New tab |
+| Shortcut | Win+W | Ctrl+W | Close tab |
+
+> **Tip:** Most people find it easier to remap the **Win and Ctrl keys** at the key level rather than mapping every individual shortcut. Once Win=Ctrl, everything else follows automatically.
+
+![PowerToys Keyboard Manager remapping view](./img/keyboardmanager.png)
 
 ## Helpful Mac-style tweaks
 - Keep aliases in zsh for `ls`, `ll`, `lt`, `cat`, `grep`, and git shortcuts
