@@ -207,6 +207,31 @@ Use these in order while updating your Ubuntu profile settings:
 3. Confirm the profile colors and cursor settings  
    ![Ubuntu profile color and cursor settings](./img/likemac3.png)
 
+## Keyboard comforts
+Mac muscle memory relies on **Cmd+Backspace** (clear line) and **Option+Backspace** (delete word). Here is how to get that behavior on Windows.
+
+### PowerShell
+Add these to your `$PROFILE` (run `notepad $PROFILE` to edit):
+
+```powershell
+Set-PSReadLineKeyHandler -Chord Alt+Backspace -Function BackwardKillWord
+Set-PSReadLineKeyHandler -Chord Ctrl+u -Function BackwardKillLine
+```
+
+- **Alt+Backspace** → delete previous word (like Option+Backspace on Mac)
+- **Ctrl+U** → clear line to the left of cursor (like Cmd+Backspace on Mac)
+- **Ctrl+Backspace** → delete previous word (already works by default)
+
+### zsh (WSL)
+These are already defaults in zsh, but for reference:
+
+- **Alt+Backspace** → delete previous word ✅
+- **Ctrl+U** → clear entire line ✅
+- **Ctrl+W** → delete previous word ✅
+
+### Why not Win+Backspace?
+On a Mac keyboard, Cmd maps to the Win key on Windows. Unfortunately Win+key combos are intercepted by the OS before your terminal sees them, so Win+Backspace cannot be rebound inside the shell. The workaround is [PowerToys Keyboard Manager](https://learn.microsoft.com/windows/powertoys/keyboard-manager) — swap Win ↔ Ctrl so your Cmd muscle memory lands on Ctrl, then the bindings above just work.
+
 ## Helpful Mac-style tweaks
 - Keep aliases in zsh for `ls`, `ll`, `lt`, `cat`, `grep`, and git shortcuts
 - Use `tmux` with `Ctrl+a` prefix for split panes and persistent sessions
