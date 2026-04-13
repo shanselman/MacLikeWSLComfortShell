@@ -46,6 +46,17 @@ Apply Windows-side options too:
   -ConfigurePowerShellKeyboard
 ```
 
+### Visual walkthrough (Windows Terminal profile)
+
+1. Open Windows Terminal settings and select your Ubuntu profile.  
+   ![Windows Terminal Ubuntu profile selection](./img/likemac1.png)
+
+2. Update font and appearance settings for a Mac-like look.  
+   ![Ubuntu profile appearance settings](./img/likemac2.png)
+
+3. Confirm profile colors and cursor settings.  
+   ![Ubuntu profile color and cursor settings](./img/likemac3.png)
+
 ### Reusable profiles
 
 Create/save with interactive mode:
@@ -89,6 +100,8 @@ Set-PSReadLineKeyHandler -Chord Ctrl+u -Function BackwardKillLine
 - `Ctrl+Backspace` -> delete previous word (already default)
 
 Note: `Win+Backspace` is handled by Windows before shells receive it. If you want Cmd-like behavior from a Mac keyboard, use PowerToys Keyboard Manager to remap keys.
+
+![PowerToys Keyboard Manager remapping view](./img/keyboardmanager.png)
 
 ### Troubleshooting
 
