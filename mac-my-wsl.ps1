@@ -229,7 +229,9 @@ function Update-ManagedBlock {
     }
 
     $raw = Get-Content -LiteralPath $Path -Raw
-    $pattern = "(?ms)^\Q$start\E\r?\n.*?^\Q$end\E\r?\n?"
+    $escapedStart = [regex]::Escape($start)
+    $escapedEnd = [regex]::Escape($end)
+    $pattern = "(?ms)^${escapedStart}\r?\n.*?^${escapedEnd}\r?\n?"
     $withoutBlock = [regex]::Replace($raw, $pattern, "")
     $trimmed = $withoutBlock.TrimEnd("`r", "`n")
 
@@ -258,7 +260,7 @@ function Invoke-Bootstrap {
     param(
         [Parameter(Mandatory = $true)][string]$TargetDistro,
         [Parameter(Mandatory = $true)][string]$ScriptPath,
-        [Parameter(Mandatory = $true)][string[]]$NormalizedArgs,
+        [Parameter(Mandatory = $false)][string[]]$NormalizedArgs = @(),
         [Parameter(Mandatory = $true)][bool]$SkipNormalization
     )
 
@@ -296,6 +298,37 @@ function Invoke-TerminalFragmentInstall {
     }
 
     & $installerPath @params
+}
+
+function Test-NerdFontInstalled {
+    $fontName = "JetBrainsMono Nerd Font"
+    $fontsRegistryPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
+        "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+    )
+    foreach ($regPath in $fontsRegistryPaths) {
+        if (Test-Path $regPath) {
+            $match = Get-ItemProperty -Path $regPath |
+                ForEach-Object { $_.PSObject.Properties } |
+                Where-Object { $_.Name -match "JetBrainsMono.*Nerd" }
+            if ($match) { return $true }
+        }
+    }
+    return $false
+}
+
+function Invoke-NerdFontCheck {
+    if (Test-NerdFontInstalled) {
+        Write-Host "JetBrainsMono Nerd Font is installed." -ForegroundColor Green
+    } else {
+        Write-Host ""
+        Write-Host "⚠ JetBrainsMono Nerd Font is not installed." -ForegroundColor Yellow
+        Write-Host "  The Mac Comfort Shell terminal profile requires this font for icons and the Starship prompt." -ForegroundColor Yellow
+        Write-Host "  Install it with:" -ForegroundColor Yellow
+        Write-Host "    winget install JanDeDobbeleer.OhMyPosh -s winget  # includes Nerd Fonts" -ForegroundColor Cyan
+        Write-Host "  Or download from: https://www.nerdfonts.com/font-downloads" -ForegroundColor Cyan
+        Write-Host ""
+    }
 }
 
 function Get-FlagState {
@@ -428,6 +461,7 @@ if (-not ($distroList -contains $config.Distro)) {
 }
 
 $config.BootstrapArgs = Normalize-BootstrapArgs -ArgsInput $config.BootstrapArgs
+if (-not $config.BootstrapArgs) { $config.BootstrapArgs = @() }
 Invoke-Bootstrap -TargetDistro $config.Distro -ScriptPath $BootstrapScript -NormalizedArgs $config.BootstrapArgs -SkipNormalization $config.SkipDos2Unix
 
 $dryRunMode = $config.BootstrapArgs -contains "--dry-run"
@@ -436,6 +470,7 @@ if ($dryRunMode) {
 } else {
     if ($config.InstallTerminalFragment) {
         Invoke-TerminalFragmentInstall -TargetDistro $config.Distro -AllUsers $config.TerminalFragmentAllUsers
+        Invoke-NerdFontCheck
     }
     if ($config.ConfigurePowerShellKeyboard) {
         Configure-PowerShellKeyboardComfort

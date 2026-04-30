@@ -6,19 +6,23 @@ DRY_RUN=0
 NO_BREW=0
 MINIMAL=0
 FORCE=0
+IS_ROOT=0
+TARGET_USER=""
 LOG_FILE=""
 APT_UPDATED=0
 
 usage() {
   cat <<EOF
-Usage: $SCRIPT_NAME [--minimal] [--no-brew] [--force] [--dry-run] [--help]
+Usage: $SCRIPT_NAME [--user <name>] [--minimal] [--no-brew] [--force] [--dry-run] [--help]
 
 Options:
-  --minimal   Skip optional extras (brew formulae and zsh plugins).
-  --no-brew   Do not install or configure Homebrew packages.
-  --force     Overwrite managed files and existing managed-compatible shims.
-  --dry-run   Print planned actions without applying changes.
-  --help      Show this help message.
+  --user <name>  Configure this user's environment (requires root).
+                 Defaults to the current user.
+  --minimal      Skip optional extras (brew formulae and zsh plugins).
+  --no-brew      Do not install or configure Homebrew packages.
+  --force        Overwrite managed files and existing managed-compatible shims.
+  --dry-run      Print planned actions without applying changes.
+  --help         Show this help message.
 EOF
 }
 
@@ -36,6 +40,24 @@ run() {
     return 0
   fi
   "$@"
+}
+
+# Run a command that normally needs sudo; skip sudo when already root.
+run_privileged() {
+  if [ "$IS_ROOT" -eq 1 ]; then
+    run "$@"
+  else
+    run sudo "$@"
+  fi
+}
+
+# Run a command as the target user (for git config, chsh, etc.).
+run_as_target() {
+  if [ "$IS_ROOT" -eq 1 ] && [ "$TARGET_USER" != "root" ] && [ "$TARGET_USER" != "$USER" ]; then
+    run sudo -H -u "$TARGET_USER" -- "$@"
+  else
+    run "$@"
+  fi
 }
 
 has_cmd() {
@@ -60,7 +82,7 @@ apt_update_once() {
     return 0
   fi
   info "Running apt-get update"
-  run sudo apt-get update
+  run_privileged apt-get update
   APT_UPDATED=1
 }
 
@@ -73,6 +95,13 @@ ensure_apt_package() {
     return 0
   fi
 
+  # In dry-run mode, apt-cache may be empty (apt update was also dry-run),
+  # so skip the availability check and just report what would happen.
+  if [ "$DRY_RUN" -eq 1 ]; then
+    info "Would install apt package: $pkg"
+    return 0
+  fi
+
   if ! apt-cache show "$pkg" >/dev/null 2>&1; then
     if [ "$optional" -eq 1 ]; then
       warn "Optional apt package not available: $pkg"
@@ -82,7 +111,7 @@ ensure_apt_package() {
   fi
 
   info "Installing apt package: $pkg"
-  if ! run sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "$pkg"; then
+  if ! run_privileged env DEBIAN_FRONTEND=noninteractive apt-get install -y "$pkg"; then
     if [ "$optional" -eq 1 ]; then
       warn "Optional apt package failed to install: $pkg"
       return 0
@@ -188,9 +217,9 @@ load_brew_shellenv() {
   if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
     # shellcheck disable=SC1091
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-  elif [ -x "$HOME/.linuxbrew/bin/brew" ]; then
+  elif [ -x "${TARGET_HOME:-$HOME}/.linuxbrew/bin/brew" ]; then
     # shellcheck disable=SC1091
-    eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+    eval "$("${TARGET_HOME:-$HOME}/.linuxbrew/bin/brew" shellenv)"
   fi
 }
 
@@ -225,7 +254,7 @@ ensure_git_clone() {
   fi
 
   info "Cloning $repo into $dest"
-  if ! run git clone --depth 1 "$repo" "$dest"; then
+  if ! run_as_target git clone --depth 1 "$repo" "$dest"; then
     warn "Failed to clone $repo"
   fi
 }
@@ -235,14 +264,19 @@ ensure_git_config() {
   local value="$2"
   local current
 
-  current="$(git config --global --get "$key" || true)"
+  # Read check: run directly (not through dry-run wrapper).
+  if [ "$IS_ROOT" -eq 1 ] && [ "$TARGET_USER" != "root" ] && [ "$TARGET_USER" != "$USER" ]; then
+    current="$(sudo -H -u "$TARGET_USER" -- git config --global --get "$key" 2>/dev/null || true)"
+  else
+    current="$(git config --global --get "$key" 2>/dev/null || true)"
+  fi
   if [ -n "$current" ] && [ "$FORCE" -eq 0 ]; then
     info "git config already set: $key=$current"
     return 0
   fi
 
   info "Setting git config: $key=$value"
-  run git config --global "$key" "$value"
+  run_as_target git config --global "$key" "$value"
 }
 
 print_version_line() {
@@ -264,6 +298,11 @@ while [ $# -gt 0 ]; do
     --no-brew) NO_BREW=1 ;;
     --force) FORCE=1 ;;
     --dry-run) DRY_RUN=1 ;;
+    --user)
+      shift
+      [ $# -gt 0 ] || die "--user requires a username argument."
+      TARGET_USER="$1"
+      ;;
     --help|-h)
       usage
       exit 0
@@ -296,15 +335,37 @@ if [[ "$PWD" == /mnt/[a-zA-Z]/* ]]; then
   warn "Current directory is under /mnt/... . Builds and file-heavy tasks may be slower there."
 fi
 
-if ! sudo -n true 2>/dev/null; then
-  warn "sudo non-interactive check failed. You may be prompted for your password."
-  if [ "$DRY_RUN" -eq 0 ]; then
-    run sudo -v
-  fi
+IS_ROOT=0
+if [ "$EUID" -eq 0 ]; then
+  IS_ROOT=1
+elif ! sudo -n true 2>/dev/null; then
+  die "sudo requires a password. Either run as root, grant passwordless sudo (e.g. 'echo \"$USER ALL=(ALL) NOPASSWD:ALL\" | sudo tee /etc/sudoers.d/$USER'), or use --dry-run to preview."
 fi
 
-mkdir -p "$HOME/bin" "$HOME/src" "$HOME/.config/wsl-mac"
-export PATH="$HOME/bin:$PATH"
+# Resolve target user for dotfiles/shims/configs.
+if [ -z "$TARGET_USER" ]; then
+  TARGET_USER="$USER"
+fi
+if [ "$TARGET_USER" = "$USER" ]; then
+  TARGET_HOME="$HOME"
+else
+  if [ "$IS_ROOT" -eq 0 ]; then
+    die "Cannot configure another user without root. Run as root with --user $TARGET_USER."
+  fi
+  TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+  if [ -z "$TARGET_HOME" ]; then
+    die "User '$TARGET_USER' not found in passwd database."
+  fi
+  info "Configuring environment for user '$TARGET_USER' (home: $TARGET_HOME)"
+fi
+
+# Create target user directories with correct ownership.
+if [ "$IS_ROOT" -eq 1 ] && [ "$TARGET_USER" != "root" ]; then
+  install -d -o "$TARGET_USER" "$TARGET_HOME/bin" "$TARGET_HOME/src" "$TARGET_HOME/.config/wsl-mac"
+else
+  mkdir -p "$TARGET_HOME/bin" "$TARGET_HOME/src" "$TARGET_HOME/.config/wsl-mac"
+fi
+export PATH="$TARGET_HOME/bin:$PATH"
 
 apt_update_once
 required_apt=(
@@ -328,7 +389,7 @@ else
 fi
 
 if ! has_cmd fd && has_cmd fdfind; then
-  install_shim "$HOME/bin/fd" "$(cat <<'EOF'
+  install_shim "$TARGET_HOME/bin/fd" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -338,7 +399,7 @@ EOF
 fi
 
 if ! has_cmd bat && has_cmd batcat; then
-  install_shim "$HOME/bin/bat" "$(cat <<'EOF'
+  install_shim "$TARGET_HOME/bin/bat" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -347,7 +408,7 @@ EOF
 )"
 fi
 
-install_shim "$HOME/bin/pbcopy" "$(cat <<'EOF'
+install_shim "$TARGET_HOME/bin/pbcopy" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -355,7 +416,7 @@ clip.exe
 EOF
 )"
 
-install_shim "$HOME/bin/pbpaste" "$(cat <<'EOF'
+install_shim "$TARGET_HOME/bin/pbpaste" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -363,7 +424,7 @@ powershell.exe -NoProfile -Command Get-Clipboard | tr -d '\r'
 EOF
 )"
 
-install_shim "$HOME/bin/open" "$(cat <<'EOF'
+install_shim "$TARGET_HOME/bin/open" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -380,7 +441,7 @@ EOF
 )"
 
 if ! has_cmd xdg-open; then
-  install_shim "$HOME/bin/xdg-open" "$(cat <<'EOF'
+  install_shim "$TARGET_HOME/bin/xdg-open" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -390,7 +451,7 @@ EOF
 fi
 
 if ! has_cmd x-www-browser; then
-  install_shim "$HOME/bin/x-www-browser" "$(cat <<'EOF'
+  install_shim "$TARGET_HOME/bin/x-www-browser" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -400,7 +461,7 @@ EOF
 fi
 
 if ! has_cmd www-browser; then
-  install_shim "$HOME/bin/www-browser" "$(cat <<'EOF'
+  install_shim "$TARGET_HOME/bin/www-browser" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -410,7 +471,7 @@ EOF
 fi
 
 if ! has_cmd wslview; then
-  install_shim "$HOME/bin/wslview" "$(cat <<'EOF'
+  install_shim "$TARGET_HOME/bin/wslview" "$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 # wsl-mac-comfort shim
@@ -420,33 +481,44 @@ EOF
 fi
 
 if [ "$NO_BREW" -eq 0 ]; then
-  if ! has_cmd brew; then
-    info "Installing Homebrew"
-    if ! run bash -lc 'NONINTERACTIVE=1 CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'; then
-      warn "Homebrew install failed; continuing."
-    fi
+  if [ "$IS_ROOT" -eq 1 ]; then
+    warn "Homebrew cannot run as root. Skipping brew install and formulae."
+    warn "To install brew, re-run as the target user or run: sudo -u $TARGET_USER bash $0 --user $TARGET_USER"
   else
-    info "Homebrew already installed"
-  fi
-
-  if [ "$DRY_RUN" -eq 0 ]; then
-    load_brew_shellenv
-  fi
-
-  if has_cmd brew; then
-    if [ "$MINIMAL" -eq 0 ]; then
-      for formula in starship gh direnv zoxide yq btop fnm; do
-        ensure_brew_formula "$formula"
-      done
+    if ! has_cmd brew; then
+      info "Installing Homebrew"
+      brew_tmp="$(mktemp)"
+      if curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$brew_tmp"; then
+        if ! run env NONINTERACTIVE=1 bash "$brew_tmp"; then
+          warn "Homebrew install failed; continuing."
+        fi
+      else
+        warn "Failed to download Homebrew installer; continuing."
+      fi
+      rm -f "$brew_tmp"
     else
-      info "Skipping brew formula installs because --minimal was provided"
+      info "Homebrew already installed"
     fi
 
-    if ! run brew doctor; then
-      warn "brew doctor reported warnings."
+    if [ "$DRY_RUN" -eq 0 ]; then
+      load_brew_shellenv
     fi
-  else
-    warn "brew is not available after install attempt."
+
+    if has_cmd brew; then
+      if [ "$MINIMAL" -eq 0 ]; then
+        for formula in starship gh direnv zoxide yq btop fnm; do
+          ensure_brew_formula "$formula"
+        done
+      else
+        info "Skipping brew formula installs because --minimal was provided"
+      fi
+
+      if ! run brew doctor; then
+        warn "brew doctor reported warnings."
+      fi
+    else
+      warn "brew is not available after install attempt."
+    fi
   fi
 else
   info "Skipping Homebrew because --no-brew was provided"
@@ -470,7 +542,7 @@ if [ -z "${BROWSER:-}" ]; then
 fi
 EOF
 )"
-append_managed_block "$HOME/.zprofile" "wsl-mac-comfort" "$zprofile_block"
+append_managed_block "$TARGET_HOME/.zprofile" "wsl-mac-comfort" "$zprofile_block"
 
 zshrc_block="$(cat <<'EOF'
 export PATH="$HOME/bin:$PATH"
@@ -499,9 +571,9 @@ alias gp='git push'
 [ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 EOF
 )"
-append_managed_block "$HOME/.zshrc" "wsl-mac-comfort" "$zshrc_block"
+append_managed_block "$TARGET_HOME/.zshrc" "wsl-mac-comfort" "$zshrc_block"
 
-starship_cfg="$HOME/.config/starship.toml"
+starship_cfg="$TARGET_HOME/.config/starship.toml"
 if [ ! -f "$starship_cfg" ] || [ "$FORCE" -eq 1 ]; then
   write_text_file "$starship_cfg" 644 "$(cat <<'EOF'
 add_newline = false
@@ -520,8 +592,8 @@ else
 fi
 
 if [ "$MINIMAL" -eq 0 ] && has_cmd tmux; then
-  ensure_git_clone "https://github.com/tmux-plugins/tpm" "$HOME/.tmux/plugins/tpm"
-  tmux_cfg="$HOME/.tmux.conf"
+  ensure_git_clone "https://github.com/tmux-plugins/tpm" "$TARGET_HOME/.tmux/plugins/tpm"
+  tmux_cfg="$TARGET_HOME/.tmux.conf"
   if [ ! -f "$tmux_cfg" ] || [ "$FORCE" -eq 1 ]; then
     write_text_file "$tmux_cfg" 644 "$(cat <<'EOF'
 set -g mouse on
@@ -551,19 +623,35 @@ ensure_git_config core.autocrlf input
 
 if has_cmd zsh; then
   zsh_path="$(command -v zsh)"
-  current_shell="$(getent passwd "$USER" | awk -F: '{print $7}')"
+  current_shell="$(getent passwd "$TARGET_USER" | awk -F: '{print $7}')"
   if [ "$current_shell" != "$zsh_path" ]; then
-    warn "Default shell is $current_shell. Attempting to switch to $zsh_path."
+    warn "Default shell for $TARGET_USER is $current_shell. Attempting to switch to $zsh_path."
     if [ "$DRY_RUN" -eq 1 ]; then
-      info "Would run: chsh -s \"$zsh_path\" \"$USER\""
+      info "Would run: chsh -s \"$zsh_path\" \"$TARGET_USER\""
     else
-      if chsh -s "$zsh_path" "$USER"; then
-        info "Default shell changed to zsh"
+      if run_privileged chsh -s "$zsh_path" "$TARGET_USER"; then
+        info "Default shell changed to zsh for $TARGET_USER"
       else
         warn "Could not change default shell automatically."
       fi
     fi
   fi
+fi
+
+# Fix ownership of all written files when running as root for another user.
+if [ "$IS_ROOT" -eq 1 ] && [ "$TARGET_USER" != "root" ] && [ "$DRY_RUN" -eq 0 ]; then
+  info "Fixing ownership of $TARGET_HOME files for $TARGET_USER"
+  chown -R "$TARGET_USER" \
+    "$TARGET_HOME/bin" \
+    "$TARGET_HOME/src" \
+    "$TARGET_HOME/.config" \
+    "$TARGET_HOME/.zprofile" \
+    "$TARGET_HOME/.zshrc" \
+    2>/dev/null || true
+  # Also fix tmux and git dirs if they exist
+  for p in "$TARGET_HOME/.tmux" "$TARGET_HOME/.tmux.conf" "$TARGET_HOME/.gitconfig"; do
+    [ -e "$p" ] && chown -R "$TARGET_USER" "$p" 2>/dev/null || true
+  done
 fi
 
 printf '\nSummary checks:\n'
